@@ -27,7 +27,7 @@ class Club(object):
         self.b = LOW
 
     async def init(self, game_uri, network):
-        self.game = await websockets.connect(game_uri)
+        self.game = await websockets.connect(game_uri, max_size=40960000)
 
         self.lights = await discovery.discover_lights(broadcast_space=network)
         if not self.lights:
@@ -109,21 +109,6 @@ class Club(object):
         'resume': receive_resume,
         'beatmapEvent': receive_map_event,
     }
-
-
-async def main(uri, broadcast_space):
-    lights = await discovery.discover_lights(broadcast_space=broadcast_space)
-    if not lights:
-        raise RuntimeError('Unable to find any wiz lights. Have you done your setup?')
-    print('Discovered %d lights: %s' % (len(lights), [light.mac for light in lights]))
-
-    async with websockets.connect(uri) as socket:
-        while True:
-            packet = await socket.recv()
-            data = json.loads(packet)
-
-            handler = handlers.get(data.get('event'))
-            handler(lights, data)
 
 
 async def main(uri, network):
