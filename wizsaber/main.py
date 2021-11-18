@@ -11,6 +11,14 @@ RED = (255, 0, 0)
 YELLOW = (255, 255, 0)
 BLUE = (0, 0, 255)
 
+LV_OFF = 0
+LV_BLUE_ON = 1
+LV_BLUE_FLASH = 2
+LV_BLUE_FADE = 3
+LV_RED_ON = 5
+LV_RED_FLASH = 6
+LV_RED_FADE = 7
+
 
 class Club(object):
     def __init__(self):
@@ -67,27 +75,36 @@ class Club(object):
 
     async def receive_map_event(self, data):
         event = data.get('beatmapEvent', {})
-        type = event.get('type')
+        etype = event.get('type')
         value = event.get('value')
 
-        if type >= 5:
+        light = None
+        if etype in (0, 1, 4, 5):
+            light = self.lights[0]
+        elif etype == 2:
+            light = self.lights[1]
+        elif etype == 3:
+            light = self.lights[2]
+
+        if not light:
             return
 
-        if value == 0:
-            # TODO: Blank
-            pass
-        elif value in (1, 2):
-            # TODO: Turn down the blue
-            pass
-        elif value == 3:
-            # TODO: Turn up the blue
-            pass
-        elif value in (5, 6):
-            # TODO: Turn down the red
-            pass
-        elif value == 7:
-            # TODO: Turn up the red
-            pass
+        if value == LV_OFF:
+            await light.turn_on(PilotBuilder(rgb = YELLOW, brightness = LOW, speed = 80))
+        elif value == LV_RED_ON:
+            await light.turn_on(PilotBuilder(rgb = RED, brightness = HI, speed = 80))
+        elif value == LV_BLUE_ON:
+            await light.turn_on(PilotBuilder(rgb = BLUE, brightness = HI, speed = 80))
+        elif value == LV_RED_FADE:
+            await light.turn_on(PilotBuilder(rgb = RED, brightness = LOW, speed = 20))
+        elif value == LV_BLUE_FADE:
+            await light.turn_on(PilotBuilder(rgb = BLUE, brightness = LOW, speed = 20))
+        elif value == LV_RED_FLASH:
+            await light.turn_on(PilotBuilder(rgb = RED, brightness = HI, speed = 80))
+            await light.turn_on(PilotBuilder(rgb = RED, brightness = LOW, speed = 40))
+        elif value == LV_BLUE_FLASH:
+            await light.turn_on(PilotBuilder(rgb = BLUE, brightness = HI, speed = 80))
+            await light.turn_on(PilotBuilder(rgb = BLUE, brightness = LOW, speed = 40))
 
     handlers = {
         'hello': receive_hello,
