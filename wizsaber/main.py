@@ -35,19 +35,13 @@ class Club(object):
         print('Discovered %d lights: %s' % \
                 (len(self.lights), [light.mac for light in self.lights]))
 
-        self.light_r = self.lights[2]
-        self.light_b = self.lights[0]
-        self.lights_o = [self.lights[1]] + self.lights[3:]
-
     async def enter_game(self):
-        await self.light_r.turn_on(PilotBuilder(rgb = RED, brightness = LOW))
-        await self.light_b.turn_on(PilotBuilder(rgb = BLUE, brightness = LOW))
-        for light in self.lights_o:
-            await light.turn_on(PilotBuilder(rgb = YELLOW, brightness = MID))
+        for light in self.lights:
+            await light.turn_on(PilotBuilder(rgb = YELLOW, brightness = LOW, speed = 40))
 
     async def go_ambient(self):
         for light in self.lights:
-            await light.turn_on(PilotBuilder(rgb = YELLOW, brightness = HI))
+            await light.turn_on(PilotBuilder(rgb = YELLOW, brightness = HI, speed = 60))
 
     async def run(self):
         while True:
@@ -55,23 +49,24 @@ class Club(object):
             data = json.loads(packet)
 
             handler = self.handlers.get(data.get('event'))
-            await handler(self, data)
+            if handler:
+                await handler(self, data)
 
     async def receive_hello(self, data):
         print('Hello Beat Saber!')
         print(data)
 
     async def receive_start(self, data):
-        self.enter_game()
+        await self.enter_game()
 
     async def receive_end(self, data):
-        self.go_ambient()
+        await self.go_ambient()
 
     async def receive_pause(self, data):
-        self.go_ambient()
+        await self.go_ambient()
 
     async def receive_resume(self, data):
-        self.enter_game()
+        await self.enter_game()
 
     async def receive_map_event(self, data):
         event = data.get('beatmapEvent', {})
@@ -129,6 +124,12 @@ async def main(uri, broadcast_space):
 
             handler = handlers.get(data.get('event'))
             handler(lights, data)
+
+
+async def main(uri, network):
+    club = Club()
+    await club.init(uri, network)
+    await club.run()
 
 
 if __name__ == '__main__':
