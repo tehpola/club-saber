@@ -1,8 +1,10 @@
-from pywizlight import wizlight, PilotBuilder, discovery
 from .beatsaber import Network, EventType, LightValue
+from pywizlight import PilotBuilder, discovery
+import appdirs
 import asyncio
-import websockets
 import json
+import os
+import websockets
 
 
 LOW = 64
@@ -15,17 +17,29 @@ BLUE = (0, 0, 255)
 
 class Club(object):
     def __init__(self):
+        config_dir = appdirs.user_config_dir()
+        config = dict()
+        try:
+            with open(os.path.join(config_dir, 'wizsaber.json')) as config_file:
+                config = json.load(config_file)
+        except FileNotFoundError:
+            print('No configuration file found. Using defaults...')
+
+        host = config.setdefault('host', 'localhost')
+        port = config.setdefault('port', 6557)
+        self.game_uri = config.setdefault('uri', 'ws://%s:%d/socket' % (host, port))
+        self.netmask = config.setdefault('netmask', '192.168.1.255')
+
         self.color_0 = RED
         self.color_1 = BLUE
 
-    async def init(self, game_uri, network):
-        self.game_uri = game_uri
+    async def init(self):
         self.packet_size = Network.MAX_PACKET_SIZE
         print('Attempting to connect to Beat Saber (%s)...' % self.game_uri)
         self.game = await websockets.connect(
-                game_uri, max_size=self.packet_size)
+                self.game_uri, max_size=self.packet_size)
 
-        self.lights = await discovery.discover_lights(broadcast_space=network)
+        self.lights = await discovery.discover_lights(broadcast_space=self.netmask)
         if not self.lights:
             raise RuntimeError('Unable to find any wiz lights. Have you done your setup?')
         print('Discovered %d lights: %s' %
@@ -149,13 +163,12 @@ class Club(object):
     }
 
 
-async def main(uri, network):
+async def main():
     club = Club()
-    await club.init(uri, network)
+    await club.init()
     await club.run()
 
 
 if __name__ == '__main__':
-    # TODO: Break out to a config
-    asyncio.run(main('ws://CA04385W.local:6557/socket', '192.168.11.255'))
+    asyncio.run(main())
 
