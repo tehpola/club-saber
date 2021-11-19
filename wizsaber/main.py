@@ -57,6 +57,7 @@ class Club(object):
                 print('Attempting to reconnect with a larger packet size (%d)'
                       % self.packet_size)
 
+                # TODO: Back off if this keeps happening; don't lock up
                 self.game = await websockets.connect(
                         self.game_uri, max_size=self.packet_size)
 
@@ -85,9 +86,11 @@ class Club(object):
     async def receive_hello(self, data):
         print('Hello Beat Saber!')
         self.report_status(data)
+        self.process_environment(data)
 
     async def receive_start(self, data):
         self.report_status(data)
+        self.process_environment(data)
         await self.enter_game()
 
     async def receive_end(self, data):
