@@ -6,7 +6,7 @@ import json
 
 
 LOW = 64
-MID = 128
+MED = 128
 HI = 192
 RED = (255, 0, 0)
 YELLOW = (255, 255, 0)
@@ -123,19 +123,21 @@ class Club(object):
         if value == LightValue.OFF:
             await light.turn_on(PilotBuilder(rgb = YELLOW, brightness = LOW, speed = 80))
         elif value == LightValue.RED_ON:
-            await light.turn_on(PilotBuilder(rgb = self.color_0, brightness = HI, speed = 80))
+            await light.turn_on(PilotBuilder(rgb = self.color_0, brightness = MED, speed = 80))
         elif value == LightValue.BLUE_ON:
-            await light.turn_on(PilotBuilder(rgb = self.color_1, brightness = HI, speed = 80))
+            await light.turn_on(PilotBuilder(rgb = self.color_1, brightness = MED, speed = 80))
         elif value == LightValue.RED_FADE:
+            await light.turn_on(PilotBuilder(rgb = self.color_0, brightness = HI, speed = 80))
             await light.turn_on(PilotBuilder(rgb = self.color_0, brightness = LOW, speed = 20))
         elif value == LightValue.BLUE_FADE:
+            await light.turn_on(PilotBuilder(rgb = self.color_1, brightness = HI, speed = 80))
             await light.turn_on(PilotBuilder(rgb = self.color_1, brightness = LOW, speed = 20))
         elif value == LightValue.RED_FLASH:
             await light.turn_on(PilotBuilder(rgb = self.color_0, brightness = HI, speed = 80))
-            await light.turn_on(PilotBuilder(rgb = self.color_0, brightness = LOW, speed = 40))
+            await light.turn_on(PilotBuilder(rgb = self.color_0, brightness = MED, speed = 40))
         elif value == LightValue.BLUE_FLASH:
             await light.turn_on(PilotBuilder(rgb = self.color_1, brightness = HI, speed = 80))
-            await light.turn_on(PilotBuilder(rgb = self.color_1, brightness = LOW, speed = 40))
+            await light.turn_on(PilotBuilder(rgb = self.color_1, brightness = MED, speed = 40))
 
     handlers = {
         'hello': receive_hello,
