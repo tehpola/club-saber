@@ -67,6 +67,7 @@ class Club(object):
             except websockets.exceptions.ConnectionClosed as e:
                 print('Caught exception: %s' % e)
 
+                # TODO: Validate the code before doing this...
                 self.packet_size *= 2
                 print('Attempting to reconnect with a larger packet size (%d)'
                       % self.packet_size)
@@ -76,7 +77,8 @@ class Club(object):
                         self.game_uri, max_size=self.packet_size)
 
     def report_status(self, data):
-        bm = data.get('status', {}).get('beatmap')
+        status = data.get('status') or {}
+        bm = status.get('beatmap')
         if not bm:
             return
 
@@ -89,7 +91,7 @@ class Club(object):
     def process_environment(self, data):
         status = data.get('status') or {}
         beatmap = status.get('beatmap') or {}
-        colors = status.get('color')
+        colors = beatmap.get('color')
         if not colors:
             return
 
