@@ -64,7 +64,7 @@ class Club(object):
                     await handler(self, data)
 
             # Packet overruns will cause the connection to be closed; try again
-            except websockets.exceptions.ConnectionClosedError as e:
+            except websockets.exceptions.ConnectionClosed as e:
                 print('Caught exception: %s' % e)
 
                 self.packet_size *= 2
@@ -87,7 +87,9 @@ class Club(object):
             bm.get('difficulty')))
 
     def process_environment(self, data):
-        colors = data.get('status', {}).get('beatmap', {}).get('color')
+        status = data.get('status') or {}
+        beatmap = status.get('beatmap') or {}
+        colors = status.get('color')
         if not colors:
             return
 
