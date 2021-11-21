@@ -132,24 +132,23 @@ class Club(object):
             await self.go_ambient()
 
     rankings = {
-        'SSS': { 'rgb': (255, 255, 255), 'brightness': HI },
-        'SS': { 'rgb': (255, 255, 255), 'brightness': HI },
-        'S': { 'rgb': (255, 255, 255), 'brightness': HI },
-        'A': { 'rgb': (0, 255, 0), 'brightness': HI },
-        'B': { 'rgb': (0, 255, 0), 'brightness': MED },
-        'C': { 'rgb': YELLOW, 'brightness': MED },
-        'D': { 'rgb': YELLOW, 'brightness': MED },
-        'E': { 'rgb': YELLOW, 'brightness': LOW },
+        'SSS': { 'rgb': WHITE,  'brightness': HI },
+        'SS':  { 'rgb': WHITE,  'brightness': HI },
+        'S':   { 'rgb': WHITE,  'brightness': HI },
+        'A':   { 'rgb': GREEN,  'brightness': HI },
+        'B':   { 'rgb': GREEN,  'brightness': MED },
+        'C':   { 'rgb': YELLOW, 'brightness': MED },
+        'D':   { 'rgb': YELLOW, 'brightness': MED },
+        'E':   { 'rgb': YELLOW, 'brightness': LOW },
     }
     async def celebrate(self, performance):
         self.celebrating = True
 
         rank = self.rankings.get(performance.get('rank', 'E'))
-        rank.update({ 'speed': 40 })
 
         print('Yay! We got an %s (%d)!' % (performance.get('rank'), performance.get('score')))
 
-        await self.lights[0].turn_on(PilotBuilder(**rank))
+        await self.lights[0].turn_on(PilotBuilder(speed = 40, **rank))
 
         while self.celebrating:
             for light in self.lights[1:]:
