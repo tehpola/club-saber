@@ -53,7 +53,7 @@ class Club(object):
 
     async def enter_game(self):
         self.celebrating = False
-        self.go_dim()
+        await self.go_dim()
 
     async def go_dim(self):
         for light in self.lights:
@@ -109,7 +109,7 @@ class Club(object):
         self.color_1 = colors.get('environment1', BLUE)
         # TODO: Boost / sabers?
 
-        print('Colors: %s' % ((self.color_0, self.color_1)))
+        print('Colors: %s' % [(self.color_0, self.color_1)])
 
     async def receive_hello(self, data):
         print('Hello Beat Saber!')
