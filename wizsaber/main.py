@@ -105,11 +105,12 @@ class Club(object):
         if not colors:
             return
 
-        self.color_0 = colors.get('environment0', RED)
-        self.color_1 = colors.get('environment1', BLUE)
-        # TODO: Boost / sabers?
+        print('Colors: %s' % colors)
 
-        print('Colors: %s' % [(self.color_0, self.color_1)])
+        # TODO: Find similar colors supported by WiZ
+        #self.color_0 = colors.get('environment0', RED)
+        #self.color_1 = colors.get('environment1', BLUE)
+        # TODO: Boost / sabers?
 
     async def receive_hello(self, data):
         print('Hello Beat Saber!')
@@ -145,6 +146,9 @@ class Club(object):
 
         rank = self.rankings.get(performance.get('rank', 'E'))
         rank.update({ 'speed': 40 })
+
+        print('Yay! We got an %s (%d)!' % (performance.get('rank'), performance.get('score')))
+
         await self.lights[0].turn_on(PilotBuilder(**rank))
 
         while self.celebrating:
