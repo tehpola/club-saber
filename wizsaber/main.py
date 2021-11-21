@@ -4,12 +4,16 @@ import appdirs
 import asyncio
 import json
 import os
+import random
 import websockets
 
 
 LOW = 64
 MED = 128
 HI = 192
+V_HI = 255
+WHITE = (255, 255, 255)
+GREEN = (0, 255, 0)
 RED = (255, 0, 0)
 YELLOW = (255, 255, 0)
 BLUE = (0, 0, 255)
@@ -33,6 +37,8 @@ class Club(object):
         self.color_0 = RED
         self.color_1 = BLUE
 
+        self.celebrating = False
+
     async def init(self):
         self.packet_size = Network.MAX_PACKET_SIZE
         print('Attempting to connect to Beat Saber (%s)...' % self.game_uri)
@@ -46,6 +52,10 @@ class Club(object):
               (len(self.lights), [light.mac for light in self.lights]))
 
     async def enter_game(self):
+        self.celebrating = False
+        self.go_dim()
+
+    async def go_dim(self):
         for light in self.lights:
             await light.turn_on(PilotBuilder(rgb = YELLOW, brightness = LOW, speed = 40))
 
@@ -112,14 +122,53 @@ class Club(object):
         await self.enter_game()
 
     async def receive_end(self, data):
-        await self.go_ambient()
+        perf = data.get('performance') or {}
+        if perf and not perf.get('softFailed', False):
+            self.celebrating = True
+
+            asyncio.create_task(self.celebrate(perf))
+        else:
+            self.celebrating = False
+
+            await self.go_ambient()
+
+    rankings = {
+        'SSS': { 'rgb': (255, 255, 255), 'brightness': HI },
+        'SS': { 'rgb': (255, 255, 255), 'brightness': HI },
+        'S': { 'rgb': (255, 255, 255), 'brightness': HI },
+        'A': { 'rgb': (0, 255, 0), 'brightness': HI },
+        'B': { 'rgb': (0, 255, 0), 'brightness': MED },
+        'C': { 'rgb': YELLOW, 'brightness': MED },
+        'D': { 'rgb': YELLOW, 'brightness': MED },
+        'E': { 'rgb': YELLOW, 'brightness': LOW },
+    }
+    async def celebrate(self, performance):
+        rank = self.rankings.get(perf.get('rank', 'E'))
+        rank.update({ 'speed': 40 })
+        await light[0].turn_on(PilotBuilder(**rank))
+
+        while self.celebrating:
+            for light in lights[1:]:
+                color = random.choice([self.color_0, self.color_1])
+                brightness = random.randrange(MED, V_HI)
+                speed = random.randrange(40, 90)
+                await light.turn_on(PilotBuilder(rgb = color, brightness = brightness, speed = speed))
+
+            await asyncio.sleep(0.666)
 
     async def receive_pause(self, data):
+        print('Pausing...')
+
         # TODO: Save state for resume?
+
         await self.go_ambient()
 
     async def receive_resume(self, data):
-        await self.enter_game()
+        print('Let\'s get back in there!')
+
+        await self.go_dim()
+
+        # TODO: Restore state?
 
     async def receive_map_event(self, data):
         event = data.get('beatmapEvent', {})
