@@ -120,6 +120,7 @@ class Club(object):
             dist_sq = (r - ncr)**2 + (g - ncg)**2 + (b - ncb)**2
             if dist_sq < best_dist_sq:
                 best_color = near_color
+                best_dist_sq = dist_sq
 
         return best_color
 
@@ -137,6 +138,8 @@ class Club(object):
         self.color_1 = self.find_nearest(colors.get('environment1', BLUE))
         # TODO: Boost / sabers?
 
+        print('Using nearest colors: %s' % [self.color_0, self.color_1])
+
     async def receive_hello(self, data):
         print('Hello Beat Saber!')
         self.report_status(data)
@@ -148,7 +151,10 @@ class Club(object):
         await self.enter_game()
 
     async def receive_end(self, data):
-        perf = data.get('performance') or {}
+        status = data.get('status') or {}
+        perf = status.get('performance') or {}
+        print('Performance: %s' % perf)
+
         if perf and not perf.get('softFailed', False):
             asyncio.create_task(self.celebrate(perf))
         else:
@@ -182,7 +188,7 @@ class Club(object):
                 color = random.choice([self.color_0, self.color_1])
                 brightness = random.randrange(MED, V_HI)
                 speed = random.randrange(40, 90)
-                await light.turn_on(PilotBuilder(rgb = color['rgb'], brightness = brightness, speed = speed))
+                await light.turn_on(PilotBuilder(rgb = color, brightness = brightness, speed = speed))
 
             await asyncio.sleep(0.666)
 
