@@ -124,8 +124,6 @@ class Club(object):
     async def receive_end(self, data):
         perf = data.get('performance') or {}
         if perf and not perf.get('softFailed', False):
-            self.celebrating = True
-
             asyncio.create_task(self.celebrate(perf))
         else:
             self.celebrating = False
@@ -143,12 +141,14 @@ class Club(object):
         'E': { 'rgb': YELLOW, 'brightness': LOW },
     }
     async def celebrate(self, performance):
-        rank = self.rankings.get(perf.get('rank', 'E'))
+        self.celebrating = True
+
+        rank = self.rankings.get(performance.get('rank', 'E'))
         rank.update({ 'speed': 40 })
-        await light[0].turn_on(PilotBuilder(**rank))
+        await self.lights[0].turn_on(PilotBuilder(**rank))
 
         while self.celebrating:
-            for light in lights[1:]:
+            for light in self.lights[1:]:
                 color = random.choice([self.color_0, self.color_1])
                 brightness = random.randrange(MED, V_HI)
                 speed = random.randrange(40, 90)
