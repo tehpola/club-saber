@@ -88,7 +88,7 @@ class Club(object):
             except websockets.exceptions.ConnectionClosed as e:
                 print('Caught exception: %s' % e)
 
-                # TODO: Validate the code before doing this...
+                # TODO: Validate the error code before doing this...
                 self.packet_size *= 2
                 print('Attempting to reconnect with a larger packet size (%d)'
                       % self.packet_size)
@@ -153,12 +153,13 @@ class Club(object):
     async def receive_end(self, data):
         status = data.get('status') or {}
         perf = status.get('performance') or {}
-        print('Performance: %s' % perf)
 
         if perf and not perf.get('softFailed', False):
             asyncio.create_task(self.celebrate(perf))
         else:
             self.celebrating = False
+
+            print('Good effort!')
 
             await self.go_ambient()
 
@@ -190,6 +191,7 @@ class Club(object):
                 speed = random.randrange(40, 90)
                 await light.turn_on(PilotBuilder(rgb = color, brightness = brightness, speed = speed))
 
+            # TODO: Make this BPM aware
             await asyncio.sleep(0.666)
 
     async def receive_pause(self, data):
