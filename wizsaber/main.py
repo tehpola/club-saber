@@ -45,6 +45,7 @@ class Club(object):
         self.game_uri = config.setdefault('uri', 'ws://%s:%d/socket' % (host, port))
         self.netmask = config.setdefault('netmask', '192.168.1.255')
 
+        self.bpm = 60/0.666
         self.color_0 = RED
         self.color_1 = BLUE
 
@@ -127,18 +128,22 @@ class Club(object):
     def process_environment(self, data):
         status = data.get('status') or {}
         beatmap = status.get('beatmap') or {}
+
         colors = beatmap.get('color')
-        if not colors:
-            return
+        if colors:
+            print('Colors: %s' % colors)
 
-        print('Colors: %s' % colors)
+            # Find similar colors supported by WiZ
+            self.color_0 = self.find_nearest(colors.get('environment0', RED))
+            self.color_1 = self.find_nearest(colors.get('environment1', BLUE))
+            # TODO: Boost / sabers?
 
-        # Find similar colors supported by WiZ
-        self.color_0 = self.find_nearest(colors.get('environment0', RED))
-        self.color_1 = self.find_nearest(colors.get('environment1', BLUE))
-        # TODO: Boost / sabers?
+            print('Using nearest colors: %s' % [self.color_0, self.color_1])
+        else:
+            self.color_0 = RED
+            self.color_1 = BLUE
 
-        print('Using nearest colors: %s' % [self.color_0, self.color_1])
+        self.bpm = status.get('songBPM', 60/0.666)
 
     async def receive_hello(self, data):
         print('Hello Beat Saber!')
@@ -176,6 +181,7 @@ class Club(object):
 
     async def celebrate(self, performance):
         self.celebrating = True
+        dt = 60 / self.bpm
 
         rank = self.rankings.get(performance.get('rank', 'E'))
 
@@ -191,8 +197,7 @@ class Club(object):
                 speed = random.randrange(40, 90)
                 await light.turn_on(PilotBuilder(rgb = color, brightness = brightness, speed = speed))
 
-            # TODO: Make this BPM aware
-            await asyncio.sleep(0.666)
+            await asyncio.sleep(dt)
 
     async def receive_pause(self, data):
         print('Pausing...')
