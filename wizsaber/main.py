@@ -66,35 +66,23 @@ class Club(object):
               (len(self.lights), [light.mac for light in self.lights]))
 
     async def init(self):
-        game_init = asyncio.create_task(
-            self._init_game())
-        light_init = asyncio.create_task(
+        asyncio.gather(
+            self._init_game(),
             self._init_lights())
-
-        await game_init
-        await light_init
 
     async def enter_game(self):
         self.celebrating = False
         await self.go_dim()
 
     async def go_dim(self):
-        tasks = [
-            asyncio.create_task(
-                light.turn_on(PilotBuilder(rgb = YELLOW, brightness = LOW, speed = 20)))
-            for light in self.lights]
-
-        for task in tasks:
-            await task
+        asyncio.gather(*[
+            light.turn_on(PilotBuilder(rgb = YELLOW, brightness = LOW, speed = 20))
+            for light in self.lights])
 
     async def go_ambient(self):
-        tasks = [
-            asyncio.create_task(
-                light.turn_on(PilotBuilder(rgb = YELLOW, brightness = HI, speed = 40)))
-            for light in self.lights]
-
-        for task in tasks:
-            await task
+        asyncio.gather(*[
+            light.turn_on(PilotBuilder(rgb = YELLOW, brightness = HI, speed = 40))
+            for light in self.lights])
 
     async def run(self):
         while True:
@@ -104,7 +92,7 @@ class Club(object):
 
                 handler = self.handlers.get(data.get('event'))
                 if handler:
-                    await handler(self, data)
+                    asyncio.create_task(handler(self, data))
 
             # Packet overruns will cause the connection to be closed; try again
             except websockets.exceptions.ConnectionClosed as e:
