@@ -201,23 +201,29 @@ class Club(object):
         rank = self.rankings.get(performance.get('rank', 'E'))
 
         print('Yay! We got an %s (%d)!' % (
-            performance.get('rank'), performance.get('score')))
+            performance.get('rank'), performance.get('score', -1)))
 
-        await self.lights[0].turn_on(PilotBuilder(speed = 40, **rank))
+        tasks = []
+
+        score_light_idx = 0
 
         while self.celebrating:
-            tasks = []
-            for light in self.lights[1:]:
+            for idx, light in enumerate(self.lights):
+                if idx == score_light_idx:
+                    tasks.append(light.turn_on(PilotBuilder(speed = 40, **rank)))
+                    continue
+
                 color = random.choice([self.color_0, self.color_1])
                 brightness = random.randrange(MED, V_HI)
                 speed = random.randrange(40, 90)
-                tasks.append(asyncio.create_task(
-                    light.turn_on(PilotBuilder(rgb = color, brightness = brightness, speed = speed))))
+                tasks.append(
+                    light.turn_on(PilotBuilder(rgb = color, brightness = brightness, speed = speed)))
 
-            tasks.append(asyncio.create_task(asyncio.sleep(dt)))
+            tasks.append(asyncio.sleep(dt))
+            await asyncio.gather(*tasks)
 
-            for task in tasks:
-                await task
+            tasks.clear()
+            score_light_idx = (score_light_idx + 1) % len(self.lights)
 
     async def receive_pause(self, data):
         print('Pausing...')
