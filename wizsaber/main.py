@@ -13,11 +13,22 @@ LOW = 64
 MED = 128
 HI = 192
 V_HI = 255
-WHITE = (255, 255, 255)
-GREEN = (0, 255, 0)
-RED = (255, 0, 0)
-YELLOW = (255, 255, 0)
-BLUE = (0, 0, 255)
+
+# WiZ is a bit limited in color selection...
+BLACK   = (0,   0,   0)
+WHITE   = (255, 255, 255)
+RED     = (255, 0,   0)
+GREEN   = (0,   255, 0)
+BLUE    = (0,   0,   255)
+TEAL    = (0,   255, 255)
+FUSCHIA = (255, 0,   255)
+YELLOW  = (255, 255, 0)
+COLORS = [
+    BLACK,
+    RED, GREEN, BLUE,
+    TEAL, FUSCHIA, YELLOW,
+    WHITE,
+]
 
 
 class Club(object):
@@ -35,6 +46,7 @@ class Club(object):
         self.game_uri = config.setdefault('uri', 'ws://%s:%d/socket' % (host, port))
         self.netmask = config.setdefault('netmask', '192.168.1.255')
 
+        self.bpm = 60/0.666
         self.color_0 = RED
         self.color_1 = BLUE
 
@@ -98,7 +110,7 @@ class Club(object):
             except websockets.exceptions.ConnectionClosed as e:
                 print('Caught exception: %s' % e)
 
-                # TODO: Validate the code before doing this...
+                # TODO: Validate the error code before doing this...
                 self.packet_size *= 2
                 print('Attempting to reconnect with a larger packet size (%d)'
                       % self.packet_size)
@@ -119,19 +131,40 @@ class Club(object):
             bm.get('songAuthorName', 'UNKNOWN'),
             bm.get('difficulty')))
 
+    @staticmethod
+    def find_nearest(color):
+        r, g, b = color
+        best_color = YELLOW
+        best_dist_sq = 1e6
+
+        for near_color in COLORS:
+            ncr, ncg, ncb = near_color
+            dist_sq = (r - ncr)**2 + (g - ncg)**2 + (b - ncb)**2
+            if dist_sq < best_dist_sq:
+                best_color = near_color
+                best_dist_sq = dist_sq
+
+        return best_color
+
     def process_environment(self, data):
         status = data.get('status') or {}
         beatmap = status.get('beatmap') or {}
+
         colors = beatmap.get('color')
-        if not colors:
-            return
+        if colors:
+            print('Colors: %s' % colors)
 
-        print('Colors: %s' % colors)
+            # Find similar colors supported by WiZ
+            self.color_0 = self.find_nearest(colors.get('environment0', RED))
+            self.color_1 = self.find_nearest(colors.get('environment1', BLUE))
+            # TODO: Boost / sabers?
 
-        # TODO: Find similar colors supported by WiZ
-        #self.color_0 = colors.get('environment0', RED)
-        #self.color_1 = colors.get('environment1', BLUE)
-        # TODO: Boost / sabers?
+            print('Using nearest colors: %s' % [self.color_0, self.color_1])
+        else:
+            self.color_0 = RED
+            self.color_1 = BLUE
+
+        self.bpm = status.get('songBPM', 60/0.666)
 
     async def receive_hello(self, data):
         print('Hello Beat Saber!')
@@ -144,33 +177,39 @@ class Club(object):
         await self.enter_game()
 
     async def receive_end(self, data):
-        perf = data.get('performance') or {}
+        status = data.get('status') or {}
+        perf = status.get('performance') or {}
+
         if perf and not perf.get('softFailed', False):
             asyncio.create_task(self.celebrate(perf))
         else:
             self.celebrating = False
 
+            print('Good effort!')
+
             await self.go_ambient()
 
     rankings = {
-        'SSS': { 'rgb': (255, 255, 255), 'brightness': HI },
-        'SS': { 'rgb': (255, 255, 255), 'brightness': HI },
-        'S': { 'rgb': (255, 255, 255), 'brightness': HI },
-        'A': { 'rgb': (0, 255, 0), 'brightness': HI },
-        'B': { 'rgb': (0, 255, 0), 'brightness': MED },
-        'C': { 'rgb': YELLOW, 'brightness': MED },
-        'D': { 'rgb': YELLOW, 'brightness': MED },
-        'E': { 'rgb': YELLOW, 'brightness': LOW },
+        'SSS': { 'rgb': WHITE,  'brightness': HI },
+        'SS':  { 'rgb': WHITE,  'brightness': HI },
+        'S':   { 'rgb': WHITE,  'brightness': HI },
+        'A':   { 'rgb': GREEN,  'brightness': HI },
+        'B':   { 'rgb': GREEN,  'brightness': MED },
+        'C':   { 'rgb': YELLOW, 'brightness': MED },
+        'D':   { 'rgb': YELLOW, 'brightness': MED },
+        'E':   { 'rgb': YELLOW, 'brightness': LOW },
     }
+
     async def celebrate(self, performance):
         self.celebrating = True
+        dt = 60 / self.bpm
 
         rank = self.rankings.get(performance.get('rank', 'E'))
-        rank.update({ 'speed': 40 })
 
-        print('Yay! We got an %s (%d)!' % (performance.get('rank'), performance.get('score')))
+        print('Yay! We got an %s (%d)!' % (
+            performance.get('rank'), performance.get('score')))
 
-        await self.lights[0].turn_on(PilotBuilder(**rank))
+        await self.lights[0].turn_on(PilotBuilder(speed = 40, **rank))
 
         while self.celebrating:
             for light in self.lights[1:]:
@@ -179,7 +218,7 @@ class Club(object):
                 speed = random.randrange(40, 90)
                 await light.turn_on(PilotBuilder(rgb = color, brightness = brightness, speed = speed))
 
-            await asyncio.sleep(0.666)
+            await asyncio.sleep(dt)
 
     async def receive_pause(self, data):
         print('Pausing...')
@@ -219,16 +258,16 @@ class Club(object):
         elif value == LightValue.BLUE_ON:
             await light.turn_on(PilotBuilder(rgb = self.color_1, brightness = MED, speed = 80))
         elif value == LightValue.RED_FADE:
-            await light.turn_on(PilotBuilder(rgb = self.color_0, brightness = HI, speed = 80))
+            await light.turn_on(PilotBuilder(rgb = self.color_0, brightness = HI,  speed = 80))
             await light.turn_on(PilotBuilder(rgb = self.color_0, brightness = LOW, speed = 20))
         elif value == LightValue.BLUE_FADE:
-            await light.turn_on(PilotBuilder(rgb = self.color_1, brightness = HI, speed = 80))
+            await light.turn_on(PilotBuilder(rgb = self.color_1, brightness = HI,  speed = 80))
             await light.turn_on(PilotBuilder(rgb = self.color_1, brightness = LOW, speed = 20))
         elif value == LightValue.RED_FLASH:
-            await light.turn_on(PilotBuilder(rgb = self.color_0, brightness = HI, speed = 80))
+            await light.turn_on(PilotBuilder(rgb = self.color_0, brightness = HI,  speed = 80))
             await light.turn_on(PilotBuilder(rgb = self.color_0, brightness = MED, speed = 40))
         elif value == LightValue.BLUE_FLASH:
-            await light.turn_on(PilotBuilder(rgb = self.color_1, brightness = HI, speed = 80))
+            await light.turn_on(PilotBuilder(rgb = self.color_1, brightness = HI,  speed = 80))
             await light.turn_on(PilotBuilder(rgb = self.color_1, brightness = MED, speed = 40))
 
     handlers = {
