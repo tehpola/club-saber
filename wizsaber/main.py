@@ -8,6 +8,7 @@ import random
 import websockets
 
 
+OFF = 0
 LOW = 64
 MED = 128
 HI = 192
@@ -192,7 +193,7 @@ class Club(object):
             return
 
         if value == LightValue.OFF:
-            await light.turn_on(PilotBuilder(rgb = YELLOW, brightness = LOW, speed = 80))
+            await light.turn_on(PilotBuilder(brightness = OFF, speed = 80))
         elif value == LightValue.RED_ON:
             await light.turn_on(PilotBuilder(rgb = self.color_0, brightness = MED, speed = 80))
         elif value == LightValue.BLUE_ON:
