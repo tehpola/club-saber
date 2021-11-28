@@ -40,29 +40,49 @@ class Club(object):
 
         self.celebrating = False
 
-    async def init(self):
+    async def _init_game(self):
         self.packet_size = Network.MAX_PACKET_SIZE
         print('Attempting to connect to Beat Saber (%s)...' % self.game_uri)
         self.game = await websockets.connect(
                 self.game_uri, max_size=self.packet_size)
 
+    async def _init_lights(self):
         self.lights = await discovery.discover_lights(broadcast_space=self.netmask)
         if not self.lights:
             raise RuntimeError('Unable to find any wiz lights. Have you done your setup?')
         print('Discovered %d lights: %s' %
               (len(self.lights), [light.mac for light in self.lights]))
 
+    async def init(self):
+        game_init = asyncio.create_task(
+            self._init_game())
+        light_init = asyncio.create_task(
+            self._init_lights())
+
+        await game_init
+        await light_init
+
     async def enter_game(self):
         self.celebrating = False
         await self.go_dim()
 
     async def go_dim(self):
-        for light in self.lights:
-            await light.turn_on(PilotBuilder(rgb = YELLOW, brightness = LOW, speed = 40))
+        tasks = [
+            asyncio.create_task(
+                light.turn_on(PilotBuilder(rgb = YELLOW, brightness = LOW, speed = 20)))
+            for light in self.lights]
+
+        for task in tasks:
+            await task
 
     async def go_ambient(self):
-        for light in self.lights:
-            await light.turn_on(PilotBuilder(rgb = YELLOW, brightness = HI, speed = 60))
+        tasks = [
+            asyncio.create_task(
+                light.turn_on(PilotBuilder(rgb = YELLOW, brightness = HI, speed = 40)))
+            for light in self.lights]
+
+        for task in tasks:
+            await task
 
     async def run(self):
         while True:
@@ -193,7 +213,7 @@ class Club(object):
             return
 
         if value == LightValue.OFF:
-            await light.turn_on(PilotBuilder(brightness = OFF, speed = 80))
+            await light.turn_off()
         elif value == LightValue.RED_ON:
             await light.turn_on(PilotBuilder(rgb = self.color_0, brightness = MED, speed = 80))
         elif value == LightValue.BLUE_ON:
