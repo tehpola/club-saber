@@ -37,6 +37,7 @@ class Club(object):
         self.config = Config()
         self.game_uri = self.config.get('uri')
         self.netmask = self.config.get('netmask')
+        self.packet_size = Network.MAX_PACKET_SIZE
 
         self.bpm = 60/0.666
         self.color_0 = RED
@@ -44,8 +45,10 @@ class Club(object):
 
         self.celebrating = False
 
+        self.game = None
+        self.lights = []
+
     async def _init_game(self):
-        self.packet_size = Network.MAX_PACKET_SIZE
         print('Attempting to connect to Beat Saber (%s)...' % self.game_uri)
         self.game = await websockets.connect(
                 self.game_uri, max_size=self.packet_size)
