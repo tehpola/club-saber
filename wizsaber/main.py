@@ -1,11 +1,12 @@
-from .beatsaber import Network, EventType, LightValue
-from pywizlight import PilotBuilder, discovery
-import appdirs
 import asyncio
 import json
-import os
 import random
+
+from pywizlight import PilotBuilder, discovery
 import websockets
+
+from .beatsaber import Network, EventType, LightValue
+from .config import Config
 
 
 OFF = 0
@@ -33,18 +34,9 @@ COLORS = [
 
 class Club(object):
     def __init__(self):
-        config_dir = appdirs.user_config_dir()
-        config = dict()
-        try:
-            with open(os.path.join(config_dir, 'wizsaber.json')) as config_file:
-                config = json.load(config_file)
-        except FileNotFoundError:
-            print('No configuration file found. Using defaults...')
-
-        host = config.setdefault('host', 'localhost')
-        port = config.setdefault('port', 6557)
-        self.game_uri = config.setdefault('uri', 'ws://%s:%d/socket' % (host, port))
-        self.netmask = config.setdefault('netmask', '192.168.1.255')
+        self.config = Config()
+        self.game_uri = self.config.get('uri')
+        self.netmask = self.config.get('netmask')
 
         self.bpm = 60/0.666
         self.color_0 = RED
