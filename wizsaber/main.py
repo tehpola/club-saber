@@ -1,5 +1,6 @@
 from .beatsaber import Network, EventType, LightValue
 from pywizlight import PilotBuilder, discovery
+from pywizlight.rgbcw import rgb2rgbcw
 import appdirs
 import asyncio
 import json
@@ -14,21 +15,12 @@ MED = 128
 HI = 192
 V_HI = 255
 
-# WiZ is a bit limited in color selection...
-BLACK   = (0,   0,   0)
 WHITE   = (255, 255, 255)
 RED     = (255, 0,   0)
 GREEN   = (0,   255, 0)
 BLUE    = (0,   0,   255)
-TEAL    = (0,   255, 255)
 FUSCHIA = (255, 0,   255)
 YELLOW  = (255, 255, 0)
-COLORS = [
-    BLACK,
-    RED, GREEN, BLUE,
-    TEAL, FUSCHIA, YELLOW,
-    WHITE,
-]
 
 
 class Club(object):
@@ -47,8 +39,8 @@ class Club(object):
         self.netmask = config.setdefault('netmask', '192.168.1.255')
 
         self.bpm = 60/0.666
-        self.color_0 = RED
-        self.color_1 = BLUE
+        self.color_0 = { 'rgb': RED }
+        self.color_1 = { 'rgb': BLUE }
 
         self.celebrating = False
 
@@ -127,18 +119,8 @@ class Club(object):
 
     @staticmethod
     def find_nearest(color):
-        r, g, b = color
-        best_color = YELLOW
-        best_dist_sq = 1e6
-
-        for near_color in COLORS:
-            ncr, ncg, ncb = near_color
-            dist_sq = (r - ncr)**2 + (g - ncg)**2 + (b - ncb)**2
-            if dist_sq < best_dist_sq:
-                best_color = near_color
-                best_dist_sq = dist_sq
-
-        return best_color
+        rgb, cw = rgb2rgbcw(color)
+        return { 'rgb': rgb, 'cold_white': cw }
 
     def process_environment(self, data):
         status = data.get('status') or {}
@@ -155,8 +137,8 @@ class Club(object):
 
             print('Using nearest colors: %s' % [self.color_0, self.color_1])
         else:
-            self.color_0 = RED
-            self.color_1 = BLUE
+            self.color_0 = { 'rgb': RED }
+            self.color_1 = { 'rgb': BLUE }
 
         self.bpm = status.get('songBPM', 60/0.666)
 
@@ -217,7 +199,7 @@ class Club(object):
                 brightness = random.randrange(MED, V_HI)
                 speed = random.randrange(40, 90)
                 tasks.append(
-                    light.turn_on(PilotBuilder(rgb = color, brightness = brightness, speed = speed)))
+                    light.turn_on(PilotBuilder(brightness = brightness, speed = speed, **color)))
 
             tasks.append(asyncio.sleep(dt))
             await asyncio.gather(*tasks)
@@ -259,21 +241,21 @@ class Club(object):
         if value == LightValue.OFF:
             await light.turn_off()
         elif value == LightValue.RED_ON:
-            await light.turn_on(PilotBuilder(rgb = self.color_0, brightness = MED, speed = 80))
+            await light.turn_on(PilotBuilder(brightness = MED, speed = 80, **self.color_0))
         elif value == LightValue.BLUE_ON:
-            await light.turn_on(PilotBuilder(rgb = self.color_1, brightness = MED, speed = 80))
+            await light.turn_on(PilotBuilder(brightness = MED, speed = 80, **self.color_1))
         elif value == LightValue.RED_FADE:
-            await light.turn_on(PilotBuilder(rgb = self.color_0, brightness = HI,  speed = 80))
-            await light.turn_on(PilotBuilder(rgb = self.color_0, brightness = LOW, speed = 20))
+            await light.turn_on(PilotBuilder(brightness = HI,  speed = 80, **self.color_0))
+            await light.turn_on(PilotBuilder(brightness = LOW, speed = 20, **self.color_0))
         elif value == LightValue.BLUE_FADE:
-            await light.turn_on(PilotBuilder(rgb = self.color_1, brightness = HI,  speed = 80))
-            await light.turn_on(PilotBuilder(rgb = self.color_1, brightness = LOW, speed = 20))
+            await light.turn_on(PilotBuilder(brightness = HI,  speed = 80, **self.color_1))
+            await light.turn_on(PilotBuilder(brightness = LOW, speed = 20, **self.color_1))
         elif value == LightValue.RED_FLASH:
-            await light.turn_on(PilotBuilder(rgb = self.color_0, brightness = HI,  speed = 80))
-            await light.turn_on(PilotBuilder(rgb = self.color_0, brightness = MED, speed = 40))
+            await light.turn_on(PilotBuilder(brightness = HI,  speed = 80, **self.color_0))
+            await light.turn_on(PilotBuilder(brightness = MED, speed = 40, **self.color_0))
         elif value == LightValue.BLUE_FLASH:
-            await light.turn_on(PilotBuilder(rgb = self.color_1, brightness = HI,  speed = 80))
-            await light.turn_on(PilotBuilder(rgb = self.color_1, brightness = MED, speed = 40))
+            await light.turn_on(PilotBuilder(brightness = HI,  speed = 80, **self.color_1))
+            await light.turn_on(PilotBuilder(brightness = MED, speed = 40, **self.color_1))
 
     handlers = {
         'hello': receive_hello,
