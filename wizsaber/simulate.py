@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from .club import Club
+from .beatsaber import EventType, LightValue
 from pygame import mixer
 
 import asyncio
@@ -71,11 +72,24 @@ class Simulation(object):
 
         await self.club.receive_start(start_info)
 
-    async def play(self):
-        mixer.music.play()
+    async def demo(self):
+        ''' Give a little sparkle to show how things are working '''
+        await self._simulate([
+            { 'time': 0, 'type': EventType.BACK_LASERS, 'value': LightValue.OFF },
+            { 'time': 0, 'type': EventType.LEFT_LASERS, 'value': LightValue.OFF },
+            { 'time': 0, 'type': EventType.RIGHT_LASERS, 'value': LightValue.OFF },
+            { 'time': 4, 'type': EventType.LEFT_LASERS, 'value': LightValue.BLUE_FADE },
+            { 'time': 4, 'type': EventType.RIGHT_LASERS, 'value': LightValue.RED_FADE },
+            { 'time': 8, 'type': EventType.BACK_LASERS, 'value': LightValue.BLUE_FLASH },
+            { 'time': 10, 'type': EventType.BACK_LASERS, 'value': LightValue.RED_FLASH },
+            { 'time': 12, 'type': EventType.LEFT_LASERS, 'value': LightValue.RED_ON },
+            { 'time': 12, 'type': EventType.RIGHT_LASERS, 'value': LightValue.BLUE_ON },
+        ])
 
+    async def _simulate(self, events):
         tasks = []
-        events = self.beatmap.get('events', [])
+        self.time = 0
+
         for event in events:
             ets = event.get('time', 0)
             if ets > self.time:
@@ -88,6 +102,11 @@ class Simulation(object):
             ))
 
         asyncio.gather(*tasks)
+
+    async def play(self):
+        mixer.music.play()
+
+        await self._simulate(self.beatmap.get('events', []))
 
         await self.club.receive_end({})
 
