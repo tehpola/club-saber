@@ -55,10 +55,7 @@ class Simulation(object):
         start_info = {
             'status': {
                 'songBPM': self.bpm,
-                'beatmap': {
-                    'color': {
-                    }
-                }
+                'beatmap': { k: v for k, v in self.info.items() },
             }
         }
         custom = self.info.get('customData')
@@ -66,12 +63,11 @@ class Simulation(object):
             env0 = custom.get('envColorLeft')
             env1 = custom.get('envColorRight')
 
+            colors = start_info['status']['beatmap'].setdefault('color', {})
             if env0:
-                r, g, b = env0['r'], env0['g'], env0['b']
-                start_info['status']['beatmap']['color']['environment0'] = [r, g, b]
+                colors['environment0'] = [255 * env0[k] for k in ('r', 'g', 'b')]
             if env1:
-                r, g, b = env1['r'], env1['g'], env1['b']
-                start_info['status']['beatmap']['color']['environment1'] = [r, g, b]
+                colors['environment1'] = [255 * env1[k] for k in ('r', 'g', 'b')]
 
         await self.club.receive_start(start_info)
 
