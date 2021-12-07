@@ -24,12 +24,17 @@ class Color(object):
             brightness = brightness * self.brightness,
             speed = speed,
         )
-        pilot._set_cold_white(1)
-        pilot._set_warm_white(1)
+
+        # Fuck this shit. This isn't for club lighting :laughing:
+        pilot.pilot_params.pop('c', None)
+        pilot.pilot_params.pop('w', None)
 
         #logging.debug('Pilot: %s', pilot.__dict__)
 
         return pilot
+
+    def __repr__(self):
+        return 'Color(%s)' % self.__dict__
 
 Color.WHITE   = Color((255, 255, 255))
 Color.RED     = Color((255, 0,   0  ))
