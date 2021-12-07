@@ -90,7 +90,7 @@ class Simulation(object):
             { 'time': 12, 'type': EventType.LEFT_LASERS, 'value': LightValue.RED_ON },
             { 'time': 12, 'type': EventType.RIGHT_LASERS, 'value': LightValue.BLUE_ON },
             { 'time': 16, 'type': EventType.BACK_LASERS, 'value': LightValue.BLUE_FLASH },
-            { 'time': 16, 'type': EventType.BACK_LASERS, 'value': LightValue.RED_FLASH },
+            { 'time': 18, 'type': EventType.BACK_LASERS, 'value': LightValue.RED_FLASH },
             { 'time': 20, 'type': EventType.LEFT_LASERS, 'value': LightValue.BLUE_FADE },
             { 'time': 20, 'type': EventType.RIGHT_LASERS, 'value': LightValue.RED_FADE },
         ])
@@ -107,7 +107,7 @@ class Simulation(object):
 
                 if mixer.music.get_busy():
                     new_song_time = mixer.music.get_pos()
-                    self.time += (new_song_time - self.song_time) * self.bpm / 60
+                    self.time += (new_song_time - self.song_time) / 1000 * self.bpm / 60
                     self.song_time = new_song_time
                 else:
                     self.time = ets
@@ -119,10 +119,15 @@ class Simulation(object):
         asyncio.gather(*tasks)
 
     async def play(self):
-        self.song_time = mixer.music.get_pos()
-        mixer.music.play()
+        try:
+            self.song_time = mixer.music.get_pos()
+            mixer.music.play()
 
-        await self._simulate(self.beatmap.get('events', []))
+            await self._simulate(self.beatmap.get('events', []))
 
-        await self.club.receive_end({})
+            await self.club.receive_end({})
+
+        except:
+            mixer.music.stop()
+            await self.club.go_ambient()
 
