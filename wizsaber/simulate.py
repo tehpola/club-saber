@@ -6,13 +6,18 @@ from pygame import mixer
 
 import asyncio
 import json
+import logging
 import os
 import re
 
 
 class Simulation(object):
     def __init__(self, song):
+        logging.getLogger().setLevel(logging.DEBUG)
+        logging.getLogger('pywizlight').setLevel(logging.INFO)
+
         self.time = 0
+        self.song_time = 0
         self.club = Club()
 
         if os.path.isdir(song):
@@ -84,6 +89,10 @@ class Simulation(object):
             { 'time': 10, 'type': EventType.BACK_LASERS, 'value': LightValue.RED_FLASH },
             { 'time': 12, 'type': EventType.LEFT_LASERS, 'value': LightValue.RED_ON },
             { 'time': 12, 'type': EventType.RIGHT_LASERS, 'value': LightValue.BLUE_ON },
+            { 'time': 16, 'type': EventType.BACK_LASERS, 'value': LightValue.BLUE_FLASH },
+            { 'time': 16, 'type': EventType.BACK_LASERS, 'value': LightValue.RED_FLASH },
+            { 'time': 20, 'type': EventType.LEFT_LASERS, 'value': LightValue.BLUE_FADE },
+            { 'time': 20, 'type': EventType.RIGHT_LASERS, 'value': LightValue.RED_FADE },
         ])
 
     async def _simulate(self, events):
@@ -94,8 +103,14 @@ class Simulation(object):
             ets = event.get('time', 0)
             if ets > self.time:
                 dt = (ets - self.time) / self.bpm * 60.0
-                await asyncio.sleep(dt) # TODO: Imperfect - I should try to sync with the song
-                self.time = ets
+                await asyncio.sleep(dt)
+
+                if mixer.music.get_busy():
+                    new_song_time = mixer.music.get_pos()
+                    self.time += (new_song_time - self.song_time) * self.bpm / 60
+                    self.song_time = new_song_time
+                else:
+                    self.time = ets
 
             tasks.append(asyncio.create_task(
                 self.club.receive_map_event({ 'beatmapEvent': event })
@@ -104,6 +119,7 @@ class Simulation(object):
         asyncio.gather(*tasks)
 
     async def play(self):
+        self.song_time = mixer.music.get_pos()
         mixer.music.play()
 
         await self._simulate(self.beatmap.get('events', []))
