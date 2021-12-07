@@ -151,14 +151,14 @@ class Club(object):
             await self.go_ambient()
 
     rankings = {
-        'SSS': Color(WHITE,  brightness = 0.75 ),
-        'SS':  Color(WHITE,  brightness = 0.75 ),
-        'S':   Color(WHITE,  brightness = 0.75 ),
-        'A':   Color(GREEN,  brightness = 0.75 ),
-        'B':   Color(GREEN,  brightness = 0.5  ),
-        'C':   Color(YELLOW, brightness = 0.5  ),
-        'D':   Color(YELLOW, brightness = 0.5  ),
-        'E':   Color(YELLOW, brightness = 0.25 ),
+        'SSS': WHITE.copy( brightness = 0.75 ),
+        'SS':  WHITE.copy( brightness = 0.75 ),
+        'S':   WHITE.copy( brightness = 0.75 ),
+        'A':   GREEN.copy( brightness = 0.75 ),
+        'B':   GREEN.copy( brightness = 0.5  ),
+        'C':   YELLOW.copy(brightness = 0.5  ),
+        'D':   YELLOW.copy(brightness = 0.5  ),
+        'E':   YELLOW.copy(brightness = 0.25 ),
     }
 
     async def celebrate(self, performance):

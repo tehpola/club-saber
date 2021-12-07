@@ -33,6 +33,12 @@ class Color(object):
 
         return pilot
 
+    def copy(self, **kwargs):
+        result = Color(None)
+        result.__dict__.update(self.__dict__)
+        result.__dict__.update(kwargs)
+        return result
+
     def __repr__(self):
         return 'Color(%s)' % self.__dict__
 
