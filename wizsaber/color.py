@@ -7,7 +7,7 @@ from pywizlight import PilotBuilder
 class Color(object):
     def __init__(self, rgb, **kwargs):
         self.rgb = rgb
-        self.brightness = 0.5
+        self.brightness = 1.0
         self.__dict__.update(kwargs)
 
     @staticmethod
