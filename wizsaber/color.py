@@ -36,10 +36,11 @@ class Color(object):
     def __repr__(self):
         return 'Color(%s)' % self.__dict__
 
-Color.WHITE   = Color((255, 255, 255))
-Color.RED     = Color((255, 0,   0  ))
-Color.GREEN   = Color((0,   255, 0  ))
-Color.BLUE    = Color((0,   0,   255))
-Color.FUSCHIA = Color((255, 0,   255))
-Color.YELLOW  = Color((255, 255, 0  ))
+
+WHITE   = Color((255, 255, 255))
+RED     = Color((255, 0,   0  ))
+GREEN   = Color((0,   255, 0  ))
+BLUE    = Color((0,   0,   255))
+FUSCHIA = Color((255, 0,   255))
+YELLOW  = Color((255, 255, 0  ))
 

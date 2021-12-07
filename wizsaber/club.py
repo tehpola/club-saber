@@ -1,6 +1,6 @@
 from .beatsaber import Network, EventType, LightValue
 from .config import Config
-from .color import Color
+from .color import Color, WHITE, RED, GREEN, BLUE, YELLOW
 from pywizlight import PilotBuilder, discovery
 from pywizlight.rgbcw import rgb2rgbcw
 import appdirs
@@ -18,13 +18,6 @@ MED = 128
 HI = 192
 V_HI = 255
 
-WHITE   = (255, 255, 255)
-RED     = (255, 0,   0)
-GREEN   = (0,   255, 0)
-BLUE    = (0,   0,   255)
-FUSCHIA = (255, 0,   255)
-YELLOW  = (255, 255, 0)
-
 
 class Club(object):
     def __init__(self):
@@ -34,8 +27,8 @@ class Club(object):
         self.packet_size = Network.MAX_PACKET_SIZE
 
         self.bpm = 60/0.666
-        self.red = Color.RED
-        self.blue = Color.BLUE
+        self.red = RED
+        self.blue = BLUE
 
         self.celebrating = False
 
@@ -70,7 +63,7 @@ class Club(object):
 
     async def go_ambient(self):
         await asyncio.gather(*[
-            light.turn_on(PilotBuilder(rgb = YELLOW, brightness = HI, speed = 40))
+            light.turn_on(YELLOW.get_pilot(brightness = HI, speed = 40))
             for light in self.lights])
 
     async def run(self):
@@ -122,15 +115,15 @@ class Club(object):
         if colors:
             print('Colors: %s' % colors)
 
-            self.red = Color.from_beatsaber(colors.get('environment0', Color.RED))
-            self.blue = Color.from_beatsaber(colors.get('environment1', Color.BLUE))
+            red = Color.from_beatsaber(colors['environment0']) if 'environment0' in colors else RED
+            blue = Color.from_beatsaber(colors['environment1']) if 'environment1' in colors else BLUE
 
             # TODO: Boost / sabers?
 
             logging.info('Using nearest colors: %s', [self.red, self.blue])
         else:
-            self.red = Color.RED
-            self.blue = Color.BLUE
+            self.red = RED
+            self.blue = BLUE
 
         self.bpm = status.get('songBPM', 60/0.666)
 
@@ -158,14 +151,14 @@ class Club(object):
             await self.go_ambient()
 
     rankings = {
-        'SSS': { 'rgb': WHITE,  'brightness': HI },
-        'SS':  { 'rgb': WHITE,  'brightness': HI },
-        'S':   { 'rgb': WHITE,  'brightness': HI },
-        'A':   { 'rgb': GREEN,  'brightness': HI },
-        'B':   { 'rgb': GREEN,  'brightness': MED },
-        'C':   { 'rgb': YELLOW, 'brightness': MED },
-        'D':   { 'rgb': YELLOW, 'brightness': MED },
-        'E':   { 'rgb': YELLOW, 'brightness': LOW },
+        'SSS': Color(WHITE,  brightness = 0.75 ),
+        'SS':  Color(WHITE,  brightness = 0.75 ),
+        'S':   Color(WHITE,  brightness = 0.75 ),
+        'A':   Color(GREEN,  brightness = 0.75 ),
+        'B':   Color(GREEN,  brightness = 0.5  ),
+        'C':   Color(YELLOW, brightness = 0.5  ),
+        'D':   Color(YELLOW, brightness = 0.5  ),
+        'E':   Color(YELLOW, brightness = 0.25 ),
     }
 
     async def celebrate(self, performance):
@@ -184,7 +177,7 @@ class Club(object):
         while self.celebrating:
             for idx, light in enumerate(self.lights):
                 if idx == score_light_idx:
-                    tasks.append(light.turn_on(PilotBuilder(speed = 40, **rank)))
+                    tasks.append(light.turn_on(rank.get_pilot(brightness = 255, speed = 40)))
                     continue
 
                 color = random.choice([self.red, self.blue])
