@@ -132,6 +132,17 @@ class Club(object):
         self.report_status(data)
         self.process_environment(data)
 
+        dt = 60 / 180
+        for loop in range(4):
+            for off_light_idx in range(len(self.lights)):
+                await asyncio.gather(*[
+                   light.turn_off() if idx == off_light_idx else
+                    light.turn_on(YELLOW.get_pilot(brightness = HI, speed = 90))
+                   for idx, light in enumerate(self.lights)])
+                await asyncio.sleep(dt)
+
+        await self.go_ambient()
+
     async def receive_start(self, data):
         self.report_status(data)
         self.process_environment(data)
