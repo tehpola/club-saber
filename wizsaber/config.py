@@ -9,8 +9,11 @@ class Config(object):
         self.config = dict()
 
         config_dir = appdirs.user_config_dir()
-        with open(os.path.join(config_dir, 'wizsaber.json')) as config_file:
-            self.config = json.load(config_file)
+        try:
+            with open(os.path.join(config_dir, 'wizsaber.json')) as config_file:
+                self.config = json.load(config_file)
+        except FileNotFoundError:
+            pass
 
         self.config.update(**values)
 

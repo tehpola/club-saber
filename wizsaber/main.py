@@ -1,4 +1,4 @@
-from .club import Club
+from wizsaber.club import Club
 import asyncio
 
 
@@ -9,7 +9,7 @@ async def async_main():
 
 
 def main():
-    asyncio.run(main())
+    asyncio.run(async_main())
 
 
 if __name__ == '__main__':

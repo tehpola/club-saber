@@ -36,6 +36,17 @@ setup(
             'club_saber = wizsaber.main:main',
         ],
     },
+    options={
+        'py2exe': {
+            'bundle_files': 1,
+            'compressed': True,
+            'includes': ['websockets.legacy', 'websockets.legacy.client'],
+        },
+    },
+    console=[{
+        'script': 'wizsaber/main.py',
+    }],
+    zipfile=None,
     classifiers=[
         'Environment :: Plugins',
         'Intended Audience :: End Users/Desktop',
