@@ -1,0 +1,12 @@
+{
+  "$schema": "https://raw.githubusercontent.com/bsmg/BSIPA-MetadataFileSchema/master/Schema.json",
+  "id": "club-saber",
+  "name": "club-saber",
+  "author": "Mike Slegeir",
+  "version": "0.1.0",
+  "description": "A Beat Saber plugin which drives WiZ color smart lights to match the game background",
+  "gameVersion": "1.18.0",
+  "files": [
+    "Libs/club-saber.exe"
+  ]
+}
