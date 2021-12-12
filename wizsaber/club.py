@@ -1,13 +1,10 @@
 from .beatsaber import Network, EventType, LightValue
 from .config import Config
 from .color import Color, WHITE, RED, GREEN, BLUE, YELLOW
+from . import logger
 from pywizlight import PilotBuilder, discovery
-from pywizlight.rgbcw import rgb2rgbcw
-import appdirs
 import asyncio
 import json
-import logging
-import os
 import random
 import websockets
 
@@ -120,7 +117,7 @@ class Club(object):
 
             # TODO: Boost / sabers?
 
-            logging.info('Using nearest colors: %s', [self.red, self.blue])
+            logger.info('Using nearest colors: %s', [self.red, self.blue])
         else:
             self.red = RED
             self.blue = BLUE

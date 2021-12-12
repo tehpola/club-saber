@@ -2,12 +2,16 @@ from .club import Club
 import asyncio
 
 
-async def main():
+async def async_main():
     club = Club()
     await club.init()
     await club.run()
 
 
-if __name__ == '__main__':
+def main():
     asyncio.run(main())
+
+
+if __name__ == '__main__':
+    main()
 
