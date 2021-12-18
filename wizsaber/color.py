@@ -11,11 +11,16 @@ class Color(object):
         self.__dict__.update(kwargs)
 
     @staticmethod
+    def _round_color(value):
+        return min(255, round(value / 128) * 128)
+
+    @staticmethod
     def from_beatsaber(rgb):
         h, s, v = hsv = colorsys.rgb_to_hsv(*rgb)
 
         logging.debug('Beatsaber %s; HSV %s', rgb, hsv)
 
+        rgb = tuple(map(Color._round_color, rgb))
         return Color(rgb, brightness = v / 255)
 
     def get_pilot(self, brightness = 128, speed = 50):

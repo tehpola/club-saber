@@ -112,8 +112,8 @@ class Club(object):
         if colors:
             print('Colors: %s' % colors)
 
-            red = Color.from_beatsaber(colors['environment0']) if 'environment0' in colors else RED
-            blue = Color.from_beatsaber(colors['environment1']) if 'environment1' in colors else BLUE
+            self.red = Color.from_beatsaber(colors['environment0']) if 'environment0' in colors else RED
+            self.blue = Color.from_beatsaber(colors['environment1']) if 'environment1' in colors else BLUE
 
             # TODO: Boost / sabers?
 
