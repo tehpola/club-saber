@@ -3,6 +3,8 @@ import os
 
 import appdirs
 
+from .beatsaber import EventType
+
 
 class Config(object):
     def __init__(self, **values):
@@ -28,4 +30,31 @@ class Config(object):
 
     def get(self, key, default=None):
         return self.config.get(key, default)
+
+    _light_events = [
+        EventType.BACK_LASERS,
+        EventType.RING_LIGHTS,
+        EventType.LEFT_LASERS,
+        EventType.RIGHT_LASERS,
+        EventType.ROAD_LIGHTS,
+        EventType.BOOST_LIGHTS,
+        EventType.CUSTOM_LIGHT_2,
+        EventType.CUSTOM_LIGHT_3,
+        EventType.CUSTOM_LIGHT_4,
+        EventType.CUSTOM_LIGHT_5,
+        EventType.CUSTOM_EVENT_1,
+        EventType.CUSTOM_EVENT_2,
+    ]
+
+    def get_lights_for_event(self, lights: list, event):
+        if event not in self._light_events:
+            return []
+
+        ignored = self.get('lights_ignored', [])
+        lights = filter(lambda l: l.mac not in ignored, lights)
+
+        mapping = self.get('light_event_map', {})
+        lights = filter(lambda l: l.mac not in mapping or event in mapping[l.mac], lights)
+
+        return lights
 

@@ -220,18 +220,15 @@ class Club(object):
         etype = event.get('type')
         value = event.get('value')
 
-        light = None
-        if etype in (EventType.BACK_LASERS, EventType.RING_LIGHTS,
-                     EventType.ROAD_LIGHTS, EventType.BOOST_LIGHTS):
-            light = self.lights[0]
-        elif etype == EventType.LEFT_LASERS:
-            light = self.lights[1]
-        elif etype == EventType.RIGHT_LASERS:
-            light = self.lights[2]
-
-        if not light:
+        lights = self.config.get_lights_for_event(self.lights, etype)
+        if not lights:
             return
 
+        await asyncio.gather(*[
+            self.handle_light_event(light, value) for light in lights
+        ])
+
+    async def handle_light_event(self, light, value):
         if value == LightValue.OFF:
             await light.turn_off()
         elif value == LightValue.RED_ON:
