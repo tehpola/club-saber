@@ -12,7 +12,7 @@ class Config(object):
 
         config_dir = appdirs.user_config_dir()
         try:
-            with open(os.path.join(config_dir, 'wizsaber.json')) as config_file:
+            with open(os.path.join(config_dir, 'club-saber.json')) as config_file:
                 self.config = json.load(config_file)
         except FileNotFoundError:
             pass

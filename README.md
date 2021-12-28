@@ -1,3 +1,5 @@
-# wiz-saber
+# club-saber
 
-Set WiZ lights based on Beat Saber events
+Control smart lights based on Beat Saber map data.
+Currently, Philips Wiz lights are supported.
+

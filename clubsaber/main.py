@@ -1,4 +1,4 @@
-from wizsaber.club import Club
+from clubsaber.club import Club
 import asyncio
 
 

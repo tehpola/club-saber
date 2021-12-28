@@ -16,12 +16,12 @@ def get_version(filename):
 
 setup(
     name='club-saber',
-    version=get_version('wizsaber/__init__.py'),
+    version=get_version('clubsaber/__init__.py'),
     url='https://git.slegeir.com/mike/wiz-saber',
     license='Apache License, Version 2.0',
     author='Mike Slegeir',
     author_email='tehpola@gmail.com',
-    description='A Beat Saber plugin which drives WiZ color smart lights to match the game background',
+    description='A Beat Saber service which controls smart lights based on map data',
     long_description=open('README.md').read(),
     packages=find_packages(exclude=['tests', 'tests.*']),
     zip_safe=False,
@@ -33,7 +33,7 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'club_saber = wizsaber.main:main',
+            'club_saber = clubsaber.main:main',
         ],
     },
     options={
@@ -44,7 +44,7 @@ setup(
         },
     },
     console=[{
-        'script': 'wizsaber/main.py',
+        'script': 'clubsaber/main.py',
     }],
     zipfile=None,
     classifiers=[
