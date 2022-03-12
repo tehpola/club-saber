@@ -22,10 +22,13 @@ class Config(object):
         self._set_defaults()
 
     def _set_defaults(self):
+        # Game Settings
         host = self.config.setdefault('host', 'localhost')
         port = self.config.setdefault('port', 6557)
         self.config.setdefault('uri', 'ws://%s:%d/socket' % (host, port))
 
+        # Light Settings
+        self.config.setdefault('bridges', {})
         self.config.setdefault('netmask', '192.168.1.255')
 
     def get(self, key, default=None):
