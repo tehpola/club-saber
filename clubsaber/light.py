@@ -117,9 +117,10 @@ class HueLight(Light):
         h, s, v = colorsys.rgb_to_hsv(*rgb)
         return {
             'on': on and v > 0,
-            'bri': max(1, min(254, brightness * v)),
+            'bri': max(1, min(254, v)),
             'hue': int(h * 65535),
             'sat': int(s * 254),
+            'bri_inc': int(254 * max(-1.0, min(1.0, brightness))),
             'transitiontime': int((1.0 - speed) * 5),
         }
 
