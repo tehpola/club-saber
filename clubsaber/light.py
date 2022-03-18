@@ -113,14 +113,13 @@ class HueLight(Light):
         await self.light.set_state(self.translate(**state))
 
     @staticmethod
-    def translate(on=True, rgb=(255, 255, 255), brightness=0.0, speed=0.5):
+    def translate(on=True, rgb=(255, 255, 255), brightness=1.0, speed=0.5):
         h, s, v = colorsys.rgb_to_hsv(*rgb)
         return {
             'on': on and v > 0,
-            'bri': max(1, min(254, v)),
+            'bri': max(1, min(254, brightness * v)),
             'hue': int(h * 65535),
             'sat': int(s * 254),
-            'bri_inc': int(254 * max(-1.0, min(1.0, brightness))),
             'transitiontime': int((1.0 - speed) * 5),
         }
 
@@ -140,7 +139,7 @@ class WizLight(Light):
             await self.light.turn_off()
 
     @staticmethod
-    def translate(on=True, rgb=(255, 255, 255), brightness=0.0, speed=0.5):
+    def translate(on=True, rgb=(255, 255, 255), brightness=1.0, speed=0.5):
         from pywizlight import PilotBuilder
 
         h, s, v = colorsys.rgb_to_hsv(*rgb)
