@@ -21,6 +21,9 @@ class Light(object):
     async def update(**state):
         raise NotImplementedError
 
+    def get_id(self):
+        raise NotImplementedError
+
     @staticmethod
     async def _discover_hue(config):
         try:
@@ -103,6 +106,9 @@ class HueLight(Light):
         self.light = huelight
         self.config = config
 
+    def get_id(self):
+        return self.light.id
+
     async def update(self, **state):
         await self.light.set_state(self.translate(**state))
 
@@ -115,7 +121,7 @@ class HueLight(Light):
             'hue': int(h * 65535),
             'sat': int(s * 254),
             'bri_inc': int(254 * max(-1.0, min(1.0, brightness))),
-            'transitiontime': int((1.0 - speed) * 50),
+            'transitiontime': int((1.0 - speed) * 5),
         }
 
 
@@ -123,6 +129,9 @@ class WizLight(Light):
     def __init__(self, wizlight, config):
         self.light = wizlight
         self.config = config
+
+    def get_id(self):
+        return self.light.mac
 
     async def update(self, on=True, **state):
         if on:

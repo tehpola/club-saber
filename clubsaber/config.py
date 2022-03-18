@@ -61,10 +61,10 @@ class Config(object):
             return []
 
         ignored = self.get('lights_ignored', [])
-        lights = filter(lambda l: l.mac not in ignored, lights)
+        lights = filter(lambda l: l.get_id() not in ignored, lights)
 
         mapping = self.get('light_event_map', {})
-        lights = filter(lambda l: l.mac not in mapping or event in mapping[l.mac], lights)
+        lights = filter(lambda l: l.get_id() not in mapping or event in mapping[l.get_id()], lights)
 
         return lights
 

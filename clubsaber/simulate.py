@@ -120,8 +120,8 @@ class Simulation(object):
 
     async def play(self):
         try:
-            self.song_time = mixer.music.get_pos()
             mixer.music.play()
+            self.song_time = mixer.music.get_pos()
 
             await self._simulate(self.beatmap.get('events', []))
 

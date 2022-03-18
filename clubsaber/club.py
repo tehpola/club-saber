@@ -1,8 +1,7 @@
 from .beatsaber import Network, EventType, LightValue
 from .config import Config
-from .color import Color, WHITE, RED, GREEN, BLUE, YELLOW
 from . import logger
-from pywizlight import PilotBuilder, discovery
+from .light import Light
 import asyncio
 import json
 import random
@@ -10,10 +9,15 @@ import websockets
 
 
 OFF = 0
-LOW = 64
-MED = 128
-HI = 192
-V_HI = 255
+LOW = 0.25
+MED = 0.5
+HI = 0.75
+V_HI = 1.0
+WHITE = (255, 255, 255)
+RED = (255, 0, 0)
+GREEN = (0, 255, 0)
+BLUE = (0, 0, 255)
+YELLOW = (255, 255, 0)
 
 
 class Club(object):
@@ -38,11 +42,11 @@ class Club(object):
                 self.game_uri, max_size=self.packet_size)
 
     async def _init_lights(self):
-        self.lights = await discovery.discover_lights(broadcast_space=self.netmask)
+        self.lights = await Light.discover(self.config)
         if not self.lights:
-            raise RuntimeError('Unable to find any wiz lights. Have you done your setup?')
+            raise RuntimeError('Unable to find any lights. Have you done your setup?')
         print('Discovered %d lights: %s' %
-              (len(self.lights), [light.mac for light in self.lights]))
+              (len(self.lights), [light.get_id() for light in self.lights]))
 
     async def init(self):
         await asyncio.gather(
@@ -55,12 +59,12 @@ class Club(object):
 
     async def go_dim(self):
         await asyncio.gather(*[
-            light.turn_on(self.red.get_pilot(brightness = LOW, speed = 20))
+            light.update(rgb = self.red, brightness = LOW, speed = 0.2)
             for light in self.lights])
 
     async def go_ambient(self):
         await asyncio.gather(*[
-            light.turn_on(YELLOW.get_pilot(brightness = HI, speed = 40))
+            light.update(rgb = YELLOW, brightness = HI, speed = 0.4)
             for light in self.lights])
 
     async def run(self):
@@ -112,12 +116,12 @@ class Club(object):
         if colors:
             print('Colors: %s' % colors)
 
-            self.red = Color.from_beatsaber(colors['environment0']) if 'environment0' in colors else RED
-            self.blue = Color.from_beatsaber(colors['environment1']) if 'environment1' in colors else BLUE
+            self.red = colors['environment0'] if 'environment0' in colors else RED
+            self.blue = colors['environment1'] if 'environment1' in colors else BLUE
 
             # TODO: Boost / sabers?
 
-            logger.info('Using nearest colors: %s', [self.red, self.blue])
+            logger.info('Using colors: %s', [self.red, self.blue])
         else:
             self.red = RED
             self.blue = BLUE
@@ -133,8 +137,8 @@ class Club(object):
         for loop in range(4):
             for off_light_idx in range(len(self.lights)):
                 await asyncio.gather(*[
-                   light.turn_off() if idx == off_light_idx else
-                    light.turn_on(YELLOW.get_pilot(brightness = HI, speed = 90))
+                   light.update(on = False) if idx == off_light_idx else
+                    light.update(rgb = YELLOW, brightness = HI, speed = 0.9)
                    for idx, light in enumerate(self.lights)])
                 await asyncio.sleep(dt)
 
@@ -159,14 +163,14 @@ class Club(object):
             await self.go_ambient()
 
     rankings = {
-        'SSS': WHITE.copy( brightness = 0.75 ),
-        'SS':  WHITE.copy( brightness = 0.75 ),
-        'S':   WHITE.copy( brightness = 0.75 ),
-        'A':   GREEN.copy( brightness = 0.75 ),
-        'B':   GREEN.copy( brightness = 0.5  ),
-        'C':   YELLOW.copy(brightness = 0.5  ),
-        'D':   YELLOW.copy(brightness = 0.5  ),
-        'E':   YELLOW.copy(brightness = 0.25 ),
+        'SSS': tuple(HI * v for v in WHITE),
+        'SS':  tuple(HI * v for v in WHITE),
+        'S':   tuple(HI * v for v in WHITE),
+        'A':   tuple(HI * v for v in GREEN),
+        'B':   tuple(MED * v for v in GREEN),
+        'C':   tuple(MED * v for v in YELLOW),
+        'D':   tuple(MED * v for v in YELLOW),
+        'E':   tuple(LOW * v for v in YELLOW),
     }
 
     async def celebrate(self, performance):
@@ -185,15 +189,15 @@ class Club(object):
         while self.celebrating:
             for idx, light in enumerate(self.lights):
                 if idx == score_light_idx:
-                    tasks.append(light.turn_on(rank.get_pilot(brightness = 255, speed = 40)))
+                    tasks.append(light.update(rank, brightness = V_HI, speed = 0.4))
                     continue
 
                 color = random.choice([self.red, self.blue])
-                pilot = color.get_pilot(
+                tasks.append(light.update(
+                    rgb = color,
                     brightness = random.randrange(MED, V_HI),
                     speed = random.randrange(40, 90)
-                )
-                tasks.append(light.turn_on(pilot))
+                ))
 
             tasks.append(asyncio.sleep(dt))
             await asyncio.gather(*tasks)
@@ -230,23 +234,23 @@ class Club(object):
 
     async def handle_light_event(self, light, value):
         if value == LightValue.OFF:
-            await light.turn_off()
+            await light.update(on = False)
         elif value == LightValue.RED_ON:
-            await light.turn_on(self.red.get_pilot( brightness = MED, speed = 80))
+            await light.update(rgb = self.red, brightness = MED, speed = 0.8)
         elif value == LightValue.BLUE_ON:
-            await light.turn_on(self.blue.get_pilot(brightness = MED, speed = 80))
+            await light.update(rgb = self.blue, brightness = MED, speed = 0.8)
         elif value == LightValue.RED_FADE:
-            await light.turn_on(self.red.get_pilot( brightness = HI,  speed = 80))
-            await light.turn_on(self.red.get_pilot( brightness = LOW, speed = 20))
+            await light.update(rgb = self.red, brightness = HI,  speed = 0.8)
+            await light.update(rgb = self.red, brightness = LOW, speed = 0.2)
         elif value == LightValue.BLUE_FADE:
-            await light.turn_on(self.blue.get_pilot(brightness = HI,  speed = 80))
-            await light.turn_on(self.blue.get_pilot(brightness = LOW, speed = 20))
+            await light.update(rgb = self.blue, brightness = HI,  speed = 0.8)
+            await light.update(rgb = self.blue, brightness = LOW, speed = 0.2)
         elif value == LightValue.RED_FLASH:
-            await light.turn_on(self.red.get_pilot( brightness = HI,  speed = 80))
-            await light.turn_on(self.red.get_pilot( brightness = MED, speed = 40))
+            await light.update(rgb = self.red, brightness = HI,  speed = 0.8)
+            await light.update(rgb = self.red, brightness = MED, speed = 0.4)
         elif value == LightValue.BLUE_FLASH:
-            await light.turn_on(self.blue.get_pilot(brightness = HI,  speed = 80))
-            await light.turn_on(self.blue.get_pilot(brightness = MED, speed = 40))
+            await light.update(rgb = self.blue, brightness = HI,  speed = 0.8)
+            await light.update(rgb = self.blue, brightness = MED, speed = 0.4)
 
     handlers = {
         'hello': receive_hello,
