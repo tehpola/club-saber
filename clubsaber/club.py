@@ -189,14 +189,14 @@ class Club(object):
         while self.celebrating:
             for idx, light in enumerate(self.lights):
                 if idx == score_light_idx:
-                    tasks.append(light.update(rank, brightness = V_HI, speed = 0.4))
+                    tasks.append(light.update(rgb = rank, brightness = V_HI, speed = 0.4))
                     continue
 
                 color = random.choice([self.red, self.blue])
                 tasks.append(light.update(
                     rgb = color,
-                    brightness = random.randrange(MED, V_HI),
-                    speed = random.randrange(40, 90)
+                    brightness = random.random() * (V_HI - MED) + MED,
+                    speed = random.randrange(40, 90) / 100.0
                 ))
 
             tasks.append(asyncio.sleep(dt))

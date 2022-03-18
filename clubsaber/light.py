@@ -110,7 +110,10 @@ class HueLight(Light):
         return self.light.id
 
     async def update(self, **state):
-        await self.light.set_state(self.translate(**state))
+        try:
+            await self.light.set_state(self.translate(**state))
+        except Exception as e:
+            pass # FIXME: Seems like we timeout a lot... :thinking:
 
     @staticmethod
     def translate(on=True, rgb=(255, 255, 255), brightness=1.0, speed=0.5):
