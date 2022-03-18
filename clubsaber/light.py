@@ -24,7 +24,7 @@ class Light(object):
     @staticmethod
     async def _discover_hue(config):
         try:
-            import hue, socket, requests
+            import hue
             for info in await hue.Bridge.discover():
                 if not info.get('id') or not info.get('internalipaddress'):
                     continue
@@ -34,7 +34,7 @@ class Light(object):
                 if id not in bridge_configs:
                     # TODO: Check for ignored bridges
 
-                    if not await self._pair_with_hue_bridge(config, id, ip):
+                    if not await Light._pair_with_hue_bridge(config, id, ip):
                         continue
 
                 bridge_config = config.get('bridges', {})[id]
@@ -60,8 +60,10 @@ class Light(object):
 
     @staticmethod
     async def _pair_with_hue_bridge(config, id, ip):
+        import requests, socket
+
         while True:
-            response = input('Bridge %s discovered. Pair? [y/N]')
+            response = input('Bridge %s discovered. Pair? [y/N]' % id)
             if response.lower() != 'y':
                 # TODO: Record this?
                 return False
@@ -69,16 +71,19 @@ class Light(object):
             handshake = requests.post('http://%s/api' % ip, json={
                 'devicetype': 'club_saber#%s' % socket.gethostname()
             })
+            logger.debug(handshake, handshake.text)
             handshake.raise_for_status()
             result = handshake.json()
 
-            if 'error' in result:
-                print(result['error']['description'])
-            elif 'success' in result:
-                # TODO: This won't work! I need an entry-point to write to the config
-                config.bridges[id] = {
-                    'username' : result['success']['username']
-                }
+            if any('error' in obj for obj in result):
+                print(*[obj['error']['description'] for obj in result])
+            elif any('success' in obj for obj in result):
+                # TODO: This won't work! I need an entry-point
+                #   to write to the config
+                bridges = config.get('bridges', {})
+                bridge_config = bridges.setdefault(id, {})
+                bridge_config['username'] = result[0]['success']['username']
+                config.set('bridges', bridges)
                 return True
 
     @staticmethod
@@ -131,7 +136,7 @@ class WizLight(Light):
 
         h, s, v = colorsys.rgb_to_hsv(*rgb)
         pilot = PilotBuilder(
-            rgb = tuple(map(self._round_color, rgb)),
+            rgb = tuple(map(WizLight._round_color, rgb)),
             brightness = v * max(0.0, min(1.0, brightness)),
             speed = int(max(0.0, min(1.0, speed)) * 100),
         )

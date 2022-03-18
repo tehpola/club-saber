@@ -34,6 +34,13 @@ class Config(object):
     def get(self, key, default=None):
         return self.config.get(key, default)
 
+    def set(self, key, value):
+        self.config[key] = value
+
+        config_dir = appdirs.user_config_dir()
+        with open(os.path.join(config_dir, 'club-saber.json'), 'w') as config_file:
+            json.dump(self.config, config_file)
+
     _light_events = [
         EventType.BACK_LASERS,
         EventType.RING_LIGHTS,
