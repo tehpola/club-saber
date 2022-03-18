@@ -99,6 +99,12 @@ class Simulation(object):
         tasks = []
         self.time = 0
 
+        if not events:
+            try:
+                self._emulate(events)
+            except Exception as e:
+                print(e)
+
         for event in events:
             ets = event.get('time', 0)
             if ets > self.time:
@@ -117,6 +123,39 @@ class Simulation(object):
             ))
 
         asyncio.gather(*tasks)
+
+    def _emulate(self, events):
+        import random
+
+        notes = self.beatmap.get('notes', [])
+        for note in notes:
+            if random.random() < 0.666:
+                if note.get('cutDirection', 0) % 2 == 0:
+                    et = int(EventType.LEFT_LASERS)
+                else:
+                    et = int(EventType.RIGHT_LASERS)
+            else:
+                et = int(random.choice([
+                    EventType.BACK_LASERS,
+                    EventType.RING_LIGHTS,
+                    EventType.ROAD_LIGHTS,
+                    EventType.BOOST_LIGHTS
+                ]))
+
+            if note.get('type', 0) == 0:
+                lv = int(random.choice([
+                    LightValue.BLUE_ON,
+                    LightValue.BLUE_FLASH,
+                    LightValue.BLUE_FADE
+                ]))
+            else:
+                lv = int(random.choice([
+                    LightValue.RED_ON,
+                    LightValue.RED_FLASH,
+                    LightValue.RED_FADE
+                ]))
+
+            events.append({ 'time': note.get('time', 0), 'type': et, 'value': lv })
 
     async def play(self):
         try:
