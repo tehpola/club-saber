@@ -28,22 +28,26 @@ class Light(object):
     async def _discover_hue(config):
         try:
             import hue
-            for info in await hue.Bridge.discover():
-                if not info.get('id') or not info.get('internalipaddress'):
-                    continue
-
-                id, ip = info['id'], info['internalipaddress']
-                bridge_configs = config.get('bridges', {})
-                if id not in bridge_configs:
-                    # TODO: Check for ignored bridges
-
-                    if not await Light._pair_with_hue_bridge(config, id, ip):
+            bridge_configs = config.get('bridges', {})
+            if not bridge_configs:
+                for info in await hue.Bridge.discover():
+                    logger.info(info)
+                    if not info.get('id') or not info.get('internalipaddress'):
                         continue
 
-                bridge_config = config.get('bridges', {})[id]
+                    id, ip = info['id'], info['internalipaddress']
+                    if id not in bridge_configs:
+                        # TODO: Check for ignored bridges
+
+                        if not await Light._pair_with_hue_bridge(config, id, ip):
+                            continue
+
+            for id, bridge_config in bridge_configs.items():
                 user = bridge_config['username']
+                ip = bridge_config['ip']
                 bridge = hue.Bridge(ip=ip, user=user)
                 bridge_info = await bridge.get_info()
+                logger.debug('Bridge Info: %s' % bridge_info)
 
                 lights = bridge_info['lights']
                 light_keys = lights.keys()
@@ -85,6 +89,7 @@ class Light(object):
                 #   to write to the config
                 bridges = config.get('bridges', {})
                 bridge_config = bridges.setdefault(id, {})
+                bridge_config['ip'] = ip
                 bridge_config['username'] = result[0]['success']['username']
                 config.set('bridges', bridges)
                 return True
@@ -118,12 +123,13 @@ class HueLight(Light):
     @staticmethod
     def translate(on=True, rgb=(255, 255, 255), brightness=1.0, speed=0.5):
         h, s, v = colorsys.rgb_to_hsv(*rgb)
+        v = int(brightness * v)
         return {
             'on': on and v > 0,
             'bri': max(1, min(254, v)),
             'hue': int(h * 65535),
             'sat': int(s * 254),
-            'bri_inc': int(254 * max(-1.0, min(1.0, brightness))),
+            #'bri_inc': int(254 * max(-1.0, min(1.0, brightness))),
             'transitiontime': int((1.0 - speed) * 5),
         }
 
