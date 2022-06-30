@@ -5,6 +5,7 @@ from .light import Light
 import asyncio
 import json
 import random
+import sys
 import websockets
 
 
@@ -58,11 +59,13 @@ class Club(object):
         await self.go_dim()
 
     async def go_dim(self):
+        print('dim')
         await asyncio.gather(*[
             light.update(rgb = self.red, brightness = LOW, speed = 0.2)
             for light in self.lights])
 
     async def go_ambient(self):
+        print('ambient')
         await asyncio.gather(*[
             light.update(rgb = YELLOW, brightness = HI, speed = 0.4)
             for light in self.lights])
@@ -114,7 +117,7 @@ class Club(object):
 
         colors = beatmap.get('color')
         if colors:
-            print('Colors: %s' % colors)
+            print('Colors: %s' % json.dumps(colors, indent='\t'))
 
             self.red = colors['environment0'] if 'environment0' in colors else RED
             self.blue = colors['environment1'] if 'environment1' in colors else BLUE
@@ -228,6 +231,7 @@ class Club(object):
         if not lights:
             return
 
+        sys.stdout.write('%s %s\r' % (etype, value))
         await asyncio.gather(*[
             self.handle_light_event(light, value) for light in lights
         ])

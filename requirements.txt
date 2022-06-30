@@ -1,4 +1,5 @@
 appdirs
 pywizlight
+hue-api
 websockets
 
