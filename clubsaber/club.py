@@ -241,15 +241,19 @@ class Club(object):
             await light.update(rgb = self.blue, brightness = MED, speed = 0.8)
         elif value == LightValue.RED_FADE:
             await light.update(rgb = self.red, brightness = HI,  speed = 0.8)
+            await asyncio.sleep(0.2)
             await light.update(rgb = self.red, brightness = LOW, speed = 0.2)
         elif value == LightValue.BLUE_FADE:
             await light.update(rgb = self.blue, brightness = HI,  speed = 0.8)
+            await asyncio.sleep(0.2)
             await light.update(rgb = self.blue, brightness = LOW, speed = 0.2)
         elif value == LightValue.RED_FLASH:
             await light.update(rgb = self.red, brightness = HI,  speed = 0.8)
+            await asyncio.sleep(0.1)
             await light.update(rgb = self.red, brightness = MED, speed = 0.4)
         elif value == LightValue.BLUE_FLASH:
             await light.update(rgb = self.blue, brightness = HI,  speed = 0.8)
+            await asyncio.sleep(0.1)
             await light.update(rgb = self.blue, brightness = MED, speed = 0.4)
 
     handlers = {

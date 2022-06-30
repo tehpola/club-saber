@@ -113,6 +113,7 @@ class HueLight(Light):
         try:
             await self.light.set_state(self.translate(**state))
         except Exception as e:
+            print(e)
             pass # FIXME: Seems like we timeout a lot... :thinking:
 
     @staticmethod
