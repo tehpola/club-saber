@@ -65,6 +65,11 @@ class Simulation(object):
             }
         }
         custom = self.info.get('customData')
+        if not custom or not custom.get('envColorLeft'):
+            for dbmset in self.info.get('difficultyBeatmapSets'):
+                for dbm in dbmset.get('difficultyBeatmaps'):
+                    custom = dbm.get('customData')
+                    if custom: break
         if custom:
             env0 = custom.get('envColorLeft')
             env1 = custom.get('envColorRight')
@@ -94,6 +99,28 @@ class Simulation(object):
             { 'time': 20, 'type': EventType.LEFT_LASERS, 'value': LightValue.BLUE_FADE },
             { 'time': 20, 'type': EventType.RIGHT_LASERS, 'value': LightValue.RED_FADE },
         ])
+
+    async def stress_test(self, bpm = 60):
+        ''' Cycle a light on the beat as a test for how many operations can be performed '''
+        dt = 60.0 / bpm
+        types = (
+            EventType.BACK_LASERS,
+            EventType.RING_LIGHTS,
+            EventType.LEFT_LASERS,
+            EventType.RIGHT_LASERS,
+        )
+        light_index = 0
+        try:
+            while True:
+                await asyncio.gather(*[
+                    self.club.receive_map_event({ 'beatmapEvent': {
+                        'type': types[light_index], 'value': LightValue.BLUE_FLASH,
+                    }}),
+                    asyncio.sleep(dt),
+                ])
+                light_index = (light_index + 1) % len(types)
+        except KeyboardInterrupt:
+            return
 
     async def _simulate(self, events):
         tasks = []
